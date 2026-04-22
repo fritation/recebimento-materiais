@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Recebimento de Materiais</title>
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -463,7 +463,7 @@ function setLoginButtonState(enabled) {
 window.onload = async () => {
   setLoginButtonState(false);
   try {
-    msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+    msalInstance = new msalBrowser.PublicClientApplication(MSAL_CONFIG);
     await msalInstance.initialize();
     try {
       const resp = await msalInstance.handleRedirectPromise();
