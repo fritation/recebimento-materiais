@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recebimento de Materiais</title>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F4F2EE;
+    --surface: #FFFFFF;
+    --surface2: #F9F8F6;
+    --border: #E2DED8;
+    --border2: #CCC8C0;
+    --text: #1A1815;
+    --text2: #6B6760;
+    --text3: #9E9B96;
+    --accent: #1A6B4A;
+    --accent-light: #E8F5EE;
+    --accent-border: #A8D5BC;
+    --warn: #92600A;
+    --warn-light: #FEF3E2;
+    --warn-border: #F0C060;
+    --danger: #8B1F1F;
+    --danger-light: #FEF0F0;
+    --danger-border: #F0AAAA;
+    --info: #1A4A8B;
+    --info-light: #EFF4FE;
+    --info-border: #AABFF0;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-icon svg { width: 16px; height: 16px; fill: white; }
+
+  .user-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  #userInfo { display: none; }
+  #userName { font-weight: 500; color: var(--text); }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn-accent {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-size: 14px;
+    padding: 9px 18px;
+  }
+  .btn-accent:hover { background: #155a3d; }
+  .btn-accent:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-ms {
+    background: #2F2F2F;
+    color: white;
+    border-color: #2F2F2F;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    font-size: 14px;
+  }
+  .btn-ms:hover { background: #1a1a1a; }
+
+  main {
+    flex: 1;
+    padding: 2rem;
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* LOGIN SCREEN */
+  #loginScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 56px);
+    text-align: center;
+    gap: 1.5rem;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .login-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .login-card p { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
+
+  /* APP SCREEN */
+  #appScreen { display: none; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .tab {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text2);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 18px;
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 5px;
+  }
+
+  .field label .req { color: #C0392B; margin-left: 2px; }
+
+  .field input, .field textarea {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,107,74,0.1); }
+
+  .field .hint { font-size: 12px; color: var(--text3); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .status {
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 1rem;
+    display: none;
+    border: 1px solid;
+  }
+  .status.show { display: block; }
+  .status.success { background: var(--accent-light); color: var(--accent); border-color: var(--accent-border); }
+  .status.error { background: var(--danger-light); color: var(--danger); border-color: var(--danger-border); }
+  .status.warning { background: var(--warn-light); color: var(--warn); border-color: var(--warn-border); }
+  .status.info { background: var(--info-light); color: var(--info); border-color: var(--info-border); }
+
+  .spinner {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CONFIG */
+  .planilha-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .planilha-row input { flex: 1; font-size: 13px; }
+  .planilha-row .rm { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
+  .planilha-row .rm:hover { color: var(--danger); }
+
+  .btn-add {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: none;
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 7px 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 4px;
+    transition: background 0.15s;
+  }
+  .btn-add:hover { background: var(--surface2); }
+
+  /* LOG */
+  .log-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .log-dot.s { background: var(--accent); }
+  .log-dot.e { background: var(--danger); }
+  .log-dot.w { background: var(--warn); }
+  .log-time { color: var(--text3); font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
+  .log-empty { font-size: 13px; color: var(--text3); padding: 1.5rem 0; text-align: center; }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16"><path d="M8 1a1 1 0 0 1 1 1v5h5a1 1 0 0 1 0 2H9v5a1 1 0 0 1-2 0V9H2a1 1 0 0 1 0-2h5V2a1 1 0 0 1 1-1z"/></svg>
+    </div>
+    Recebimento de Materiais
+  </div>
+  <div class="user-area">
+    <div id="userInfo">
+      Olá, <span id="userName"></span>
+      <button class="btn" onclick="logout()">Sair</button>
+    </div>
+    <div id="loginBtn">
+      <button class="btn btn-ms" onclick="login()">
+        <svg width="16" height="16" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+        Entrar com Microsoft
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div style="margin-bottom:1.25rem">
+      <div style="width:52px;height:52px;background:var(--accent-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+        <svg width="26" height="26" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+      </div>
+    </div>
+    <h2>Acesse com sua conta</h2>
+    <p>Entre com o e-mail corporativo do hospital para acessar as planilhas no SharePoint.</p>
+    <button class="btn btn-ms" style="width:100%;justify-content:center" onclick="login()">
+      <svg width="16" height="16" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+      Entrar com Microsoft 365
+    </button>
+    <p style="margin-top:1rem;margin-bottom:0;font-size:12px;color:var(--text3)">Suas credenciais são gerenciadas pela Microsoft. Esta ferramenta não armazena senhas.</p>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen">
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('entry')">Lançamento</button>
+    <button class="tab" onclick="switchTab('config')">Planilhas</button>
+    <button class="tab" onclick="switchTab('log')">Histórico</button>
+  </div>
+
+  <!-- TAB: LANÇAMENTO -->
+  <div id="tab-entry" class="tab-content active">
+    <div class="card">
+      <div class="section-label">Dados do comprovante</div>
+      <div class="row">
+        <div class="field">
+          <label>Código do material<span class="req">*</span></label>
+          <input type="text" id="codigo" placeholder="ex: 12345" maxlength="7" oninput="this.value=this.value.replace(/\D/g,'')" />
+          <div class="hint">4 – 7 dígitos</div>
+        </div>
+        <div class="field">
+          <label>Quantidade entregue<span class="req">*</span></label>
+          <input type="number" id="quantidade" placeholder="ex: 10" min="1" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Nº da requisição<span class="req">*</span></label>
+          <input type="text" id="requisicao" placeholder="10 dígitos" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'')" />
+          <div class="hint">exatamente 10 dígitos</div>
+        </div>
+        <div class="field">
+          <label>Nº da remessa<span class="req">*</span></label>
+          <input type="text" id="remessa" placeholder="8 dígitos" maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')" />
+          <div class="hint">exatamente 8 dígitos</div>
+        </div>
+      </div>
+      <div style="margin-top:1.25rem">
+        <button class="btn btn-accent" id="btnLancar" onclick="lancarMaterial()" style="width:100%">Lançar material</button>
+      </div>
+    </div>
+    <div id="statusMsg" class="status"></div>
+  </div>
+
+  <!-- TAB: PLANILHAS -->
+  <div id="tab-config" class="tab-content">
+    <div class="card">
+      <div class="section-label">Planilhas de origem (busca e atualização)</div>
+      <div id="planilhasList"></div>
+      <button class="btn-add" onclick="addPlanilha()">+ Adicionar planilha</button>
+      <div class="hint" style="margin-top:10px">Cole a URL completa da planilha Excel no SharePoint ou OneDrive.</div>
+    </div>
+    <div id="configStatus" class="status"></div>
+  </div>
+
+  <!-- TAB: HISTÓRICO -->
+  <div id="tab-log" class="tab-content">
+    <div class="card">
+      <div id="logList"><div class="log-empty">Nenhum lançamento nesta sessão.</div></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<footer>Recebimento de Materiais &mdash; uso interno hospitalar</footer>
+
+<script>
+// ─── MSAL CONFIG ──────────────────────────────────────────────
+// Client ID de um app público registrado para autenticação delegada
+// (usar o "Microsoft Graph Explorer" app ID — público, sem segredo necessário)
+// Se a TI registrar um app próprio, substituir o clientId abaixo.
+const MSAL_CONFIG = {
+  auth: {
+    clientId: "14d82eec-204b-4c2f-b7e8-296a70dab67e", // Graph Explorer public client
+    authority: "https://login.microsoftonline.com/common",
+    redirectUri: window.location.href.split('?')[0].split('#')[0],
+  },
+  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false }
+};
+
+const SCOPES = ["Files.ReadWrite", "Sites.ReadWrite.All", "User.Read"];
+
+let msalInstance;
+let accessToken = null;
+let planilhas = [];
+let logEntries = [];
+
+// ─── INICIALIZAÇÃO ────────────────────────────────────────────
+window.onload = async () => {
+  msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+  await msalInstance.initialize();
+
+  // Lidar com redirect após login
+  try {
+    const resp = await msalInstance.handleRedirectPromise();
+    if (resp && resp.account) {
+      msalInstance.setActiveAccount(resp.account);
+    }
+  } catch(e) {}
+
+  loadConfig();
+  checkLoginState();
+};
+
+function checkLoginState() {
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    msalInstance.setActiveAccount(accounts[0]);
+    showApp(accounts[0]);
+  }
+}
+
+async function login() {
+  try {
+    const resp = await msalInstance.loginPopup({ scopes: SCOPES });
+    msalInstance.setActiveAccount(resp.account);
+    showApp(resp.account);
+  } catch(e) {
+    if (!e.message.includes('user_cancelled')) {
+      alert("Erro ao fazer login: " + e.message);
+    }
+  }
+}
+
+function logout() {
+  msalInstance.logoutPopup();
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('userInfo').style.display = 'none';
+  document.getElementById('loginBtn').style.display = 'block';
+  accessToken = null;
+}
+
+function showApp(account) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userInfo').style.display = 'flex';
+  document.getElementById('loginBtn').style.display = 'none';
+  document.getElementById('userName').textContent = account.name || account.username;
+}
+
+async function getToken() {
+  const request = { scopes: SCOPES, account: msalInstance.getActiveAccount() };
+  try {
+    const resp = await msalInstance.acquireTokenSilent(request);
+    return resp.accessToken;
+  } catch(e) {
+    const resp = await msalInstance.acquireTokenPopup(request);
+    return resp.accessToken;
+  }
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────
+function loadConfig() {
+  try {
+    const s = localStorage.getItem('hospitalMaterialConfig');
+    if (s) {
+      const c = JSON.parse(s);
+      planilhas = c.planilhas || [];
+      renderPlanilhas();
+    }
+  } catch(e) {}
+}
+
+function saveConfig() {
+  const c = { planilhas };
+  try { localStorage.setItem('hospitalMaterialConfig', JSON.stringify(c)); } catch(e) {}
+}
+
+function renderPlanilhas() {
+  const el = document.getElementById('planilhasList');
+  if (!planilhas.length) { el.innerHTML = ''; return; }
+  el.innerHTML = planilhas.map((p, i) => `
+    <div class="planilha-row">
+      <input type="text" value="${p.replace(/"/g,'&quot;')}" placeholder="https://hospital.sharepoint.com/..."
+        oninput="planilhas[${i}]=this.value;saveConfig()" />
+      <button class="rm" onclick="removePlanilha(${i})" title="Remover">&times;</button>
+    </div>
+  `).join('');
+}
+
+function addPlanilha() {
+  planilhas.push('');
+  renderPlanilhas();
+  saveConfig();
+}
+
+function removePlanilha(i) {
+  planilhas.splice(i, 1);
+  renderPlanilhas();
+  saveConfig();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['entry','config','log'][i] === tab));
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ─── VALIDAÇÃO ────────────────────────────────────────────────
+function validar() {
+  const codigo = document.getElementById('codigo').value.trim();
+  const qtd = document.getElementById('quantidade').value.trim();
+  const req = document.getElementById('requisicao').value.trim();
+  const rem = document.getElementById('remessa').value.trim();
+  if (!codigo || codigo.length < 4 || codigo.length > 7)
+    return { erro: 'Código do material inválido (4 a 7 dígitos).' };
+  if (!qtd || parseInt(qtd) < 1)
+    return { erro: 'Informe uma quantidade válida.' };
+  if (req.length !== 10)
+    return { erro: 'Nº de requisição deve ter exatamente 10 dígitos.' };
+  if (rem.length !== 8)
+    return { erro: 'Nº de remessa deve ter exatamente 8 dígitos.' };
+  return { codigo, quantidade: parseInt(qtd), requisicao: req, remessa: rem };
+}
+
+// ─── STATUS / LOG ─────────────────────────────────────────────
+function showStatus(id, type, html) {
+  const el = document.getElementById(id);
+  el.className = 'status show ' + type;
+  el.innerHTML = html;
+}
+
+function addLog(type, msg) {
+  const time = new Date().toLocaleTimeString('pt-BR');
+  logEntries.unshift({ type, msg, time });
+  const el = document.getElementById('logList');
+  el.innerHTML = logEntries.map(l => `
+    <div class="log-item">
+      <div class="log-dot ${l.type}"></div>
+      <div style="flex:1">
+        <span>${l.msg}</span>
+      </div>
+      <div class="log-time">${l.time}</div>
+    </div>
+  `).join('');
+}
+
+// ─── MICROSOFT GRAPH ─────────────────────────────────────────
+async function graphGet(token, path) {
+  const r = await fetch('https://graph.microsoft.com/v1.0' + path,
+    { headers: { Authorization: 'Bearer ' + token } });
+  if (!r.ok) throw new Error('Graph error ' + r.status + ' em ' + path);
+  return r.json();
+}
+
+async function graphPatch(token, path, body) {
+  const r = await fetch('https://graph.microsoft.com/v1.0' + path, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error('Graph PATCH error ' + r.status + ': ' + t);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+async function resolverDriveItem(token, shareUrl) {
+  const encoded = btoa(shareUrl).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const data = await graphGet(token, `/shares/u!${encoded}/driveItem`);
+  return `/drives/${data.parentReference.driveId}/items/${data.id}`;
+}
+
+async function getSheetsRows(token, driveItemPath, sheetId) {
+  const data = await graphGet(token, `${driveItemPath}/workbook/worksheets('${encodeURIComponent(sheetId)}')/usedRange`);
+  return data.values || [];
+}
+
+// ─── LANÇAR MATERIAL ─────────────────────────────────────────
+async function lancarMaterial() {
+  const dados = validar();
+  if (dados.erro) { showStatus('statusMsg', 'error', dados.erro); return; }
+
+  if (!planilhas.filter(p => p.trim()).length) {
+    showStatus('statusMsg', 'warning', 'Configure ao menos uma planilha na aba <strong>Planilhas</strong>.');
+    return;
+  }
+
+  const btn = document.getElementById('btnLancar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Buscando...';
+  showStatus('statusMsg', 'info', 'Buscando o item nas planilhas...');
+
+  try {
+    const token = await getToken();
+    const resultado = await buscarEAtualizar(token, dados);
+
+    if (resultado.encontrado) {
+      const corLabel = resultado.verde ? '🟢 verde (completo)' : '🟡 amarelo (parcial)';
+      showStatus('statusMsg', 'success',
+        `<strong>Código ${dados.codigo}</strong> (req. ${dados.requisicao}) atualizado com sucesso.<br>` +
+        `Qtd entregue: <strong>${resultado.novaQtd}</strong> | ` +
+        `Pendente: <strong>${resultado.pendente}</strong> | ` +
+        `Remessa(s): <strong>${resultado.novaRemessa}</strong><br>` +
+        `Linha colorida: ${corLabel}`
+      );
+      addLog('s', `Cód. ${dados.codigo} | Req. ${dados.requisicao} | +${dados.quantidade} un. | Remessa ${dados.remessa}`);
+      limparCampos();
+    } else {
+      showStatus('statusMsg', 'error',
+        `Requisição <strong>${dados.requisicao}</strong> com código <strong>${dados.codigo}</strong> não encontrada em nenhuma planilha.<br>Nenhuma alteração foi feita.`);
+      addLog('e', `Não encontrado: cód. ${dados.codigo} | Req. ${dados.requisicao}`);
+    }
+  } catch(e) {
+    showStatus('statusMsg', 'error', 'Erro: ' + e.message);
+    addLog('e', 'Erro: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Lançar material';
+}
+
+async function buscarEAtualizar(token, dados) {
+  for (const url of planilhas.filter(p => p.trim())) {
+    let driveItem;
+    try { driveItem = await resolverDriveItem(token, url.trim()); }
+    catch(e) { continue; }
+
+    const sheetsData = await graphGet(token, `${driveItem}/workbook/worksheets`);
+    const sheets = sheetsData.value || [];
+
+    for (const sheet of sheets) {
+      const rows = await getSheetsRows(token, driveItem, sheet.id);
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const reqPlan = String(row[1] || '').trim();
+        const codPlan = String(row[2] || '').trim();
+
+        if (reqPlan === dados.requisicao && codPlan === dados.codigo) {
+          const qtdSolicitada = parseFloat(row[4]) || 0;
+          const qtdAtual = parseFloat(row[5]) || 0;
+          const remessaAtual = String(row[8] || '').trim();
+          const dataAtual = String(row[7] || '').trim();
+
+          const novaQtd = qtdAtual + dados.quantidade;
+          const pendente = Math.max(0, qtdSolicitada - novaQtd);
+          const novaRemessa = remessaAtual ? `${remessaAtual} - ${dados.remessa}` : dados.remessa;
+          const hoje = new Date().toLocaleDateString('pt-BR');
+          const verde = novaQtd >= qtdSolicitada;
+          const cor = verde ? '#C8F0DA' : '#FEF3C7';
+
+          const rowNum = i + 1;
+          const sheetEnc = encodeURIComponent(sheet.id);
+
+          // Atualizar colunas F, G, H (se vazia), I
+          await graphPatch(token,
+            `${driveItem}/workbook/worksheets('${sheetEnc}')/range(address='F${rowNum}:I${rowNum}')`,
+            { values: [[novaQtd, pendente, dataAtual || hoje, novaRemessa]] }
+          );
+
+          // Colorir a linha A:I
+          await graphPatch(token,
+            `${driveItem}/workbook/worksheets('${sheetEnc}')/range(address='A${rowNum}:I${rowNum}')/format/fill`,
+            { color: cor }
+          );
+
+          return { encontrado: true, novaQtd, pendente, novaRemessa, verde };
+        }
+      }
+    }
+  }
+  return { encontrado: false };
+}
+
+
+
+// ─── UTILS ───────────────────────────────────────────────────
+function limparCampos() {
+  ['codigo','quantidade','requisicao','remessa'].forEach(id =>
+    document.getElementById(id).value = '');
+  document.getElementById('codigo').focus();
+}
+</script>
+</body>
+</html>
