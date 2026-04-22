@@ -434,11 +434,12 @@
 // Se a TI registrar um app próprio, substituir o clientId abaixo.
 const MSAL_CONFIG = {
   auth: {
-    clientId: "14d82eec-204b-4c2f-b7e8-296a70dab67e", // Graph Explorer public client
+    clientId: "14d82eec-204b-4c2f-b7e8-296a70dab67e",
     authority: "https://login.microsoftonline.com/common",
-    redirectUri: window.location.href.split('?')[0].split('#')[0],
+    redirectUri: "https://fritation.github.io/recebimento-materiais/",
+    navigateToLoginRequestUrl: false,
   },
-  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false }
+  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true }
 };
 
 const SCOPES = ["Files.ReadWrite", "Sites.ReadWrite.All", "User.Read"];
